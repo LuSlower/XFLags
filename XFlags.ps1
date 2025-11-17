@@ -1,4 +1,4 @@
-# Check administrator privileges
+
 if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     Start-Process powershell "-File `"$PSCommandPath`"" -Verb RunAs
     exit
@@ -29,7 +29,7 @@ function Console {
     }
 }
 
-# Flags
+
 $flags = @(
     @{Name = "FLG_STOP_ON_EXCEPTION"; Description = "Stop on exception"; Abbreviation = "soe"; Hex = 0x01},
     @{Name = "FLG_SHOW_LDR_SNAPS"; Description = "Show loader snaps"; Abbreviation = "sls"; Hex = 0x02},
@@ -59,7 +59,7 @@ $flags = @(
     @{Name = "FLG_ENABLE_SYSTEM_CRIT_BREAKS"; Description = "Enable system critical breaks"; Abbreviation = "scb"; Hex = 0x100000}
 )
 
-# MitigationOptions
+
 $mitigationOptions = @(
     @{Name = "FLG_ASLR"; Description = "Address Space Layout Randomization"; Abbreviation = "aslr"; Flags = @{AlwaysOn = 0x100; AlwaysOff = 0x200}},
     @{Name = "FLG_HeapTermination"; Description = "Heap Termination on Corruption"; Abbreviation = "heapt"; Flags = @{AlwaysOn = 0x1000; AlwaysOff = 0x2000}},
@@ -83,7 +83,7 @@ $otherMitigationOptions = @(
     @{Name = "FLG_SEHOP"; Description = "Structured Exception Handler Overwrite Protection"; Abbreviation = "sehop"; Hex = 0x4; Flags = @{AlwaysOn = 0x4}}
 )
 
-# Pequeña pero sirve
+
 function Restart-Process {
     param (
         [string]$processName
@@ -93,10 +93,10 @@ function Restart-Process {
 
     if ($process -ne $null) {
 
-        # Obtener la ruta 
+        
         $processPath = (Get-Process -Id $process.Id).Path
 
-        # Detener, Esperar, Iniciar 
+        
         Stop-Process -Id $process.Id -Force
         Start-Sleep -Seconds 1
         Start-Process -FilePath $processPath
@@ -107,7 +107,7 @@ function Restart-Process {
 
 $ifeoPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\"
 
-# Establecer ifeo flags
+
 function Set-Ifeo {
     param (
             [string]$process,
@@ -120,7 +120,7 @@ function Set-Ifeo {
             [int]$globalFlag
     )
 
-    # Crear la clave si no existe
+    
     $default = Join-Path -Path $ifeoPath -ChildPath "$process"
     $options = Join-Path -Path $default -ChildPath "PerfOptions"
 
@@ -128,7 +128,7 @@ function Set-Ifeo {
         New-Item -Path $options -Force | Out-Null
     }
 
-    # Establecer las global flags
+    
     if ($cpuPriority -ne $null -and $cpuPriority -ne 0) {
         Set-ItemProperty -Path $options -Name "CpuPriorityClass" -Value $cpuPriority
     } else {
@@ -173,7 +173,7 @@ function Set-Ifeo {
 
     $valueNames = @("CpuPriorityClass", "IoPriority", "PagePriority")
 
-    # Verificar si la clave esta vacía
+    
     $properties = Get-ItemProperty -Path $options -ErrorAction Stop
     $hasValue = $false
 
@@ -195,11 +195,11 @@ function Get-Ifeo {
         [string]$process
     )
 
-    # Definir rutas de registro
+    
     $defaultPath = Join-Path -Path $ifeoPath -ChildPath "$process"
     $optionsPath = Join-Path -Path $defaultPath -ChildPath "PerfOptions"
 
-    # Verificar si la clave existe
+    
     if (-not (Test-Path $defaultPath)) {
         return
     }
@@ -232,7 +232,7 @@ function Get-Ifeo {
         $result.Debugger = $default.Debugger
     }
 
-    # Verificar si la clave existe
+    
     if (-not (Test-Path $optionsPath)) {
         return $result
     }
@@ -258,12 +258,12 @@ function Load-Processes-Ifeo {
     $listBoxProcesses.Items.Clear()
 
     if ($rdbtnProcess.Checked) {
-        # Cargar procesos en ejecución
+        
         Get-Process | ForEach-Object {
             $listBoxProcesses.Items.Add($_.Name + ".exe")
         }
     } elseif ($rdbtnConfig.Checked) {
-        # Cargar procesos desde el registro
+        
         $keys = Get-ChildItem -Path $ifeoPath
 
         foreach ($key in $keys) {
@@ -271,7 +271,7 @@ function Load-Processes-Ifeo {
             if ($processName -match '^[^\\]+$') {
                 $processName = $processName + ".exe"
             } else {
-                # Eliminar parte de la ruta del registro (en este caso, solo conservar el nombre del proceso)
+                
                 $processName = [System.IO.Path]::GetFileName($processName)
             }
             $listBoxProcesses.Items.Add($processName)
@@ -285,9 +285,9 @@ function Reset-Checkboxes {
         [System.Windows.Forms.Control]$parentControl
     )
 
-    # Recorrer todos los controles del contenedor padre
+    
     foreach ($control in $parentControl.Controls) {
-        # Verificar si el control es un CheckBox
+        
         if ($control -is [System.Windows.Forms.CheckBox]) {
             $checkBox = [System.Windows.Forms.CheckBox]$control
             $checkBox.CheckState = [System.Windows.Forms.CheckState]::Unchecked
@@ -302,7 +302,7 @@ function Set-ValueFromNumber {
     )
     
     if ($number -eq $null) {
-        # Seleccionar "default (delete)" si el número es $null
+        
         $defaultItem = $comboBox.Items | Where-Object { $_ -match "default \(delete\)" }
         if ($defaultItem) {
             $comboBox.SelectedItem = $defaultItem
@@ -319,7 +319,7 @@ function Set-ValueFromNumber {
         }
     }
     
-    # Si no se encuentra, seleccionar "default (delete)"
+    
     $defaultItem = $comboBox.Items | Where-Object { $_ -match "default \(delete\)" }
     if ($defaultItem) {
         $comboBox.SelectedItem = $defaultItem
@@ -338,17 +338,17 @@ function Get-ValueFromText {
     } elseif ($inputText -match 'delete') {
         return $null
     } else {
-        return $null  # si no coincide con ningún patrón del match
+        return $null  
     }
 }
 
-# MitigationOptionsMask
+
 $global:bitmaskMit = 0
 
 function Update-MitigationMask {
     $global:bitmaskMit = 0
 
-    # ThreeState
+    
     foreach ($entry in $checkboxesMit) {
         $checkbox = $entry.CheckBox
         $option = $entry.Option
@@ -359,7 +359,7 @@ function Update-MitigationMask {
         }
     }
 
-    # TwoState
+    
     foreach ($option in $otherMitigationOptions) {
         $checkbox = $tabMit.Controls.Find($option.Abbreviation, $true)[0]
         if ($checkbox.CheckState -eq [System.Windows.Forms.CheckState]::Checked) {
@@ -401,7 +401,7 @@ function Load-OtherMitigationOptions {
         if ($controls.Count -gt 0) {
             $checkbox = $controls[0]
 
-            # Verificar que el control es un CheckBox
+            
             if ($bitmask -band $option.Hex) {
                 $checkbox.CheckState = [System.Windows.Forms.CheckState]::Checked
             } else {
@@ -412,7 +412,7 @@ function Load-OtherMitigationOptions {
 }
 
 
-#GFLagsMask
+
 $global:bitmaskFlags = 0
 
 function Update-FlagsMask {
@@ -445,7 +445,7 @@ function Load-FlagsMask {
     }
 }
 
-# Ocultar consola, crear form
+
 Console -Hide
 [System.Windows.Forms.Application]::EnableVisualStyles();
 $form = New-Object System.Windows.Forms.Form
@@ -468,14 +468,14 @@ $listBoxProcesses.Size = New-Object System.Drawing.Size(150, 250)
 $listBoxProcesses.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
 $form.Controls.Add($listBoxProcesses)
 $listBoxProcesses.add_SelectedIndexChanged({
-    # Obtener el proceso seleccionado
+    
     $selectedProcess = $listBoxProcesses.SelectedItem
 
-    # Obtener la configuración
+    
     $config = Get-Ifeo -process $selectedProcess
 
     if ($config) {
-        # PerfOptions
+        
         $cpuPriority = if ($null -ne $config.CpuPriority) { $config.CpuPriority } else { 0 }
         $ioPriority = if ($null -ne $config.IoPriority) { $config.IoPriority } else { 0 }
         $pagePriority = if ($null -ne $config.PagePriority) { $config.PagePriority } else { 0 }
@@ -484,30 +484,30 @@ $listBoxProcesses.add_SelectedIndexChanged({
         Set-ValueFromNumber -comboBox $comboBoxIoPriority -number $ioPriority
         Set-ValueFromNumber -comboBox $comboBoxPagePriority -number $pagePriority
 
-        # Large Pages
+        
         if ($null -ne $config.UseLargePages -and $config.UseLargePages -ge 1) {
             $chkbLargePages.CheckState = [System.Windows.Forms.CheckState]::Checked
         } else {
             $chkbLargePages.CheckState = [System.Windows.Forms.CheckState]::Unchecked
         }
 
-        # Debugger
+        
         $txtDbgr.Text = if ($null -ne $config.Debugger) { $config.Debugger } else { "" }
 
-        # Mitigation
+        
         $mitigationOptions = if ($null -ne $config.MitigationOptions) { $config.MitigationOptions } else { 0 }
         $labelMit.Text = "BitMask: 0x{0:X}" -f $mitigationOptions + " (Registry)"
         Load-MitigationMask -bitmask $mitigationOptions
         Load-OtherMitigationOptions -bitmask $mitigationOptions
 
-        # Global Flags
+        
         $globalFlags = if ($null -ne $config.GlobalFlag) { $config.GlobalFlag } else { 0 }
         $labelGFlags.Text = "BitMask: 0x{0:X}" -f $globalFlags + " (Registry)"
         Load-FlagsMask -bitmask $globalFlags
     }
 })
 
-# Process
+
 $rdbtnProcess = New-Object System.Windows.Forms.RadioButton
 $rdbtnProcess.Text = "Process"
 $rdbtnProcess.Size = New-Object System.Drawing.Size(70, 20)
@@ -518,7 +518,7 @@ $rdbtnProcess.add_CheckedChanged({
     Load-Processes-Ifeo
 })
 
-# Config
+
 $rdbtnConfig = New-Object System.Windows.Forms.RadioButton
 $rdbtnConfig.Text = "Config"
 $rdbtnConfig.Size = New-Object System.Drawing.Size(60, 20)
@@ -530,7 +530,7 @@ $rdbtnConfig.add_CheckedChanged({
 
 Load-Processes-Ifeo | Out-Null
 
-# TabControl
+
 $tab = New-Object System.Windows.Forms.TabControl
 $tab.Dock = [System.Windows.Forms.DockStyle]::Fill
 $tab.Add_SelectedIndexChanged({
@@ -541,11 +541,11 @@ $tab.Add_SelectedIndexChanged({
     }
 })
 
-# Ifeo
+
 $tabIfeo = New-Object System.Windows.Forms.TabPage
 $tabIfeo.Text = "General"
 
-# PriorityClass
+
 $labelCpuPriority = New-Object System.Windows.Forms.Label
 $labelCpuPriority.Location = New-Object System.Drawing.Point(210, 20)
 $labelCpuPriority.Size = New-Object System.Drawing.Size(80, 13)
@@ -560,7 +560,7 @@ $comboBoxCpuPriority.Text = "default (delete)"
 $comboBoxCpuPriority.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
 $tabIfeo.Controls.Add($comboBoxCpuPriority)
 
-# IoPriority
+
 $labelIoPriority = New-Object System.Windows.Forms.Label
 $labelIoPriority.Location = New-Object System.Drawing.Point(210, 70)
 $labelIoPriority.Size = New-Object System.Drawing.Size(60, 13)
@@ -576,7 +576,7 @@ $comboBoxIoPriority.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDo
 $comboBoxIoPriority.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
 $tabIfeo.Controls.Add($comboBoxIoPriority)
 
-# MemPriority
+
 $labelMemPriority = New-Object System.Windows.Forms.Label
 $labelMemPriority.Location = New-Object System.Drawing.Point(210, 120)
 $labelMemPriority.Size = New-Object System.Drawing.Size(85, 13)
@@ -592,7 +592,7 @@ $comboBoxPagePriority.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::Drop
 $comboBoxPagePriority.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
 $tabIfeo.Controls.Add($comboBoxPagePriority)
 
-# LargePages
+
 $chkbLargePages = New-Object System.Windows.Forms.CheckBox
 $chkbLargePages.Location = New-Object System.Drawing.Point(210, 172)
 $chkbLargePages.Size = New-Object System.Drawing.Size(105, 20)
@@ -601,7 +601,7 @@ $tabIfeo.Controls.Add($chkbLargePages)
 $tooltip = New-Object System.Windows.Forms.ToolTip
 $tooltip.SetToolTip($chkbLargePages, "Enable Large Pages if possible")
 
-# Dbg
+
 $labelDbgr = New-Object System.Windows.Forms.Label
 $labelDbgr.Location = New-Object System.Drawing.Point(170, 210)
 $labelDbgr.Size = New-Object System.Drawing.Size(70, 13)
@@ -620,32 +620,32 @@ $btnSearchDbg.Size = New-Object System.Drawing.Size(25, 20)
 $btnSearchDbg.Text = "..."
 $tabIfeo.Controls.Add($btnSearchDbg)
 $btnSearchDbg.Add_Click({
-    # Crear el OpenFileDialog
+    
     $openFileDialog = New-Object System.Windows.Forms.OpenFileDialog
     $openFileDialog.Filter = "Executables (*.exe)|*.exe|All files (*.*)|*.*"
     $openFileDialog.Title = "Select Debugger"
     
-    # Mostrar el diálogo de selección de archivos
+    
     $result = $openFileDialog.ShowDialog()
 
-    # Verificar si el usuario seleccionó un archivo y presionó OK
+    
     if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
-        # Obtener la ruta del archivo seleccionado
+        
         $selectedFile = $openFileDialog.FileName
 
-        # Establecer la ruta del archivo en el TextBox
+        
         $txtDbgr.Text = $selectedFile
     }
 })
 
-# SaveConfig
+
 $buttonSave = New-Object System.Windows.Forms.Button
 $buttonSave.Location = New-Object System.Drawing.Point(230, 260)
 $buttonSave.Size = New-Object System.Drawing.Size(50, 20)
 $buttonSave.Text = "Save"
 $tabIfeo.Controls.Add($buttonSave)
 
-# aplicar todos los cambios
+
 $buttonSave.Add_Click({
     $process = $listBoxProcesses.SelectedItem
     if ($process.Count -eq 0) {
@@ -664,12 +664,12 @@ $buttonSave.Add_Click({
         return
     }
 
-    # Convertir a valores númericos
+    
     $cpuPriorityValue = Get-ValueFromText -inputText $cpuPriority
     $ioPriorityValue = Get-ValueFromText -inputText $ioPriority
     $pagePriorityValue = Get-ValueFromText -inputText $pagePriority
     
-    # aplicar configuracion de ifeo
+    
     Set-Ifeo -process $process -cpuPriority $cpuPriorityValue -ioPriority $ioPriorityValue -pagePriority $pagePriorityValue -useLargePages $useLargePagesValue -debugger $debugger -mitigationOp $bitmaskMit -globalFlag $bitmaskFlags
     
     $processName = $process.Replace(".exe", "")
@@ -678,43 +678,43 @@ $buttonSave.Add_Click({
     if ($existProcess) {
         $result = [System.Windows.Forms.MessageBox]::Show("Restart Process?", "Applied settings", [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Information)
     
-        # reiniciar el proceso, opcionalmente
+        
         if ($result -eq [System.Windows.Forms.DialogResult]::Yes) {
             Restart-Process -processName $processName
         }
     }
 })
 
-### MitigationOptions
+
 $tabMit = New-Object System.Windows.Forms.TabPage
 $tabMit.Text = "MitigationOptions"
 
-# MitigationBitmask
+
 $labelMit = New-Object System.Windows.Forms.Label
 $labelMit.Location = New-Object System.Drawing.Point(180, 10)
 $labelMit.Size = New-Object System.Drawing.Size(250, 13)
 $labelMit.Text = "BitMask: 0x0"
 $tabMit.Controls.Add($labelMit)
 
-# Configuración de posición inicial y dimensiones del área visible
+
 $startX = 180
 $startY = 40
 $currentX = $startX
 $currentY = $startY
-$columnWidth = 120  # Ancho de la columna
-$rowHeight = 25     # Espacio entre filas
-$maxCheckboxesPerColumn = 7  # Número máximo de CheckBoxes por columna
-$checkboxCount = 0  # Contador de CheckBoxes en la columna actual
+$columnWidth = 120  
+$rowHeight = 25     
+$maxCheckboxesPerColumn = 7  
+$checkboxCount = 0  
 
 $checkboxesMit = @()
 
 foreach ($option in $mitigationOptions) {
-    # Crear CheckBox
+    
     $checkbox = New-Object System.Windows.Forms.CheckBox
     $checkbox.Text = $option.Abbreviation
     $checkbox.ThreeState = $true
     $checkbox.Location = New-Object System.Drawing.Point($currentX, $currentY)
-    $checkbox.Size = New-Object System.Drawing.Size(100, 20)  # Ajustar el tamaño del CheckBox
+    $checkbox.Size = New-Object System.Drawing.Size(100, 20)  
     $tabMit.Controls.Add($checkbox)
     $checkbox.Add_Click({
         switch ($checkbox.CheckState) {
@@ -736,14 +736,14 @@ foreach ($option in $mitigationOptions) {
 
     $checkboxesMit += [PSCustomObject]@{ CheckBox = $checkbox; Option = $option }
 
-    # Añadir SymbolicName al ToolTip
+    
     $tooltip.SetToolTip($checkbox, $option.Description)
 
-    # Ajustar la posición para el próximo CheckBox
+    
     $checkboxCount++
     $currentY += $rowHeight
 
-    # Si se ha alcanzado el número máximo de CheckBoxes en la columna, mover a la siguiente columna
+    
     if ($checkboxCount -ge $maxCheckboxesPerColumn) {
         $checkboxCount = 0
         $currentY = $startY
@@ -751,7 +751,7 @@ foreach ($option in $mitigationOptions) {
     }
 }
 
-# DEP
+
 $startX = 180
 $currentX = $startX
 
@@ -760,7 +760,7 @@ foreach ($option in $otherMitigationOptions){
     $checkbox.Text = $option.Abbreviation
     $width = ($option.Name).Length + 60
     $checkbox.Location = New-Object System.Drawing.Point($currentX, 225)
-    $checkbox.Size = New-Object System.Drawing.Size($width, 20)  # Ajustar el tamaño del CheckBox
+    $checkbox.Size = New-Object System.Drawing.Size($width, 20)  
     $tabMit.Controls.Add($checkbox)
     $checkbox.Add_Click({
         Update-MitigationMask
@@ -768,13 +768,13 @@ foreach ($option in $otherMitigationOptions){
 
     $checkboxesMit += [PSCustomObject]@{ CheckBox = $checkbox; Option = $option }
 
-    # ToolTip
+    
     $tooltip.SetToolTip($checkbox, $option.Description)
 
     $currentX+=85
 }
 
-# ResetMask
+
 $btnResetMit = New-Object System.Windows.Forms.Button
 $btnResetMit.Location = New-Object System.Drawing.Point(255, 255)
 $btnResetMit.Size = New-Object System.Drawing.Size(90, 20)
@@ -787,18 +787,18 @@ $btnResetMit.Add_Click({
     $labelMit.Text = "BitMask: 0x{0:X}" -f $global:bitmaskMit
 })
 
-### GFlags
+
 $tabGFlags = New-Object System.Windows.Forms.TabPage
 $tabGFlags.Text = "Gflags"
 
-# GFlagBitmask
+
 $labelGFlags = New-Object System.Windows.Forms.Label
 $labelGFlags.Location = New-Object System.Drawing.Point(180, 10)
 $labelGFlags.Size = New-Object System.Drawing.Size(200, 13)
 $labelGFlags.Text = "BitMask: 0x0"
 $tabGFlags.Controls.Add($labelGFlags)
 
-# ResetMask
+
 $btnResetFlags = New-Object System.Windows.Forms.Button
 $btnResetFlags.Location = New-Object System.Drawing.Point(255, 255)
 $btnResetFlags.Size = New-Object System.Drawing.Size(90, 20)
@@ -811,24 +811,24 @@ $btnResetFlags.Add_Click({
     $labelGFlags.Text = "BitMask: 0x{0:X}" -f $global:bitmaskGFlags
 })
 
-# Configuración de posición inicial y dimensiones del área visible
+
 $startX = 180
 $startY = 40
 $currentX = $startX
 $currentY = $startY
-$columnWidth = 60  # Ancho de la columna
-$rowHeight = 30     # Espacio entre filas
-$maxCheckboxesPerColumn = 7  # Número máximo de CheckBoxes por columna
-$checkboxCount = 0  # Contador de CheckBoxes en la columna actual
+$columnWidth = 60  
+$rowHeight = 30     
+$maxCheckboxesPerColumn = 7  
+$checkboxCount = 0  
 
 $checkboxesFlags = @()
 
 foreach ($flag in $flags) {
-    # Crear CheckBox
+    
     $checkbox = New-Object System.Windows.Forms.CheckBox
     $checkbox.Text = $flag.Abbreviation
     $checkbox.Location = New-Object System.Drawing.Point($currentX, $currentY)
-    $checkbox.Size = New-Object System.Drawing.Size(55, 20)  # Ajustar el tamaño del CheckBox
+    $checkbox.Size = New-Object System.Drawing.Size(55, 20)  
     $tabGFlags.Controls.Add($checkbox)
 
     $checkbox.Add_Click({
@@ -837,14 +837,14 @@ foreach ($flag in $flags) {
 
     $checkboxesFlags += [PSCustomObject]@{ CheckBox = $checkbox; Option = $flag }
 
-    # Añadir SymbolicName al ToolTip
+    
     $tooltip.SetToolTip($checkbox, $flag.Description)
 
-    # Ajustar la posición para el próximo CheckBox
+    
     $checkboxCount++
     $currentY += $rowHeight
 
-    # Si se ha alcanzado el número máximo de CheckBoxes en la columna, mover a la siguiente columna
+    
     if ($checkboxCount -ge $maxCheckboxesPerColumn) {
         $checkboxCount = 0
         $currentY = $startY
@@ -858,3 +858,4 @@ $tab.TabPages.Add($tabGFlags)
 $form.Controls.Add($tab)
 
 $form.ShowDialog()
+
